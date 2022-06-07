@@ -25,10 +25,10 @@ const promptUser = () => {
   ])
   .then(answer => {
     const {choice} = answer;
-    
+
     switch(choice) {
       case 'View all departments':
-        viewAllDeparments();
+        viewAllDepartments();
         break;
       case 'View all roles':
         viewAllRoles();
@@ -53,3 +53,15 @@ const promptUser = () => {
     promptUser();
   })
 }
+
+// displays all departments
+const viewAllDepartments = () => {
+  const sql = 'SELECT * FROM department';
+  db.query(sql, (err,res) => {
+    if(err) throw err;
+    console.table('\nAll departments:', res);
+  })
+}
+
+// to start the application
+promptUser();
