@@ -56,7 +56,7 @@ const promptUser = () => {
 
 // displays all departments
 const viewAllDepartments = () => {
-  const sql = 'SELECT department.name as department FROM department';
+  const sql = 'SELECT * FROM department';
   db.query(sql, (err,res) => {
     if(err) throw err;
     console.table('\nAll departments:', res);
@@ -65,13 +65,18 @@ const viewAllDepartments = () => {
 
 // display all roles
 const viewAllRoles = () => {
-  const sql = `SELECT role.title as role, role.salary, department.name AS department
+  const sql = `SELECT role.id, role.title as role, role.salary, department.name AS department
     FROM role
     INNER JOIN department ON role.department_id = department.id`;
   db.query(sql, (err,res) => {
     if(err) throw err;
     console.table('\n All roles:',res);
   })
+}
+
+// display all employees
+const viewAllEmployees = () => {
+
 }
 
 // to start the application
