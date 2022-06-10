@@ -312,5 +312,72 @@ const addEmployee = () => {
   })
 }
 
+// Update Employee role
+const updateEmployeeRole = () => {
+  // Get all employees from database
+  db.query('SELECT id,first_name, last_name FROM employee', (err, empTable) => {
+    if(err) throw err;
+
+    // make employee choice list
+    const empChoice = [];
+    empTable.forEach(empInfo => empChoice.push(empInfo.first_name + ' ' + empInfo.last_name));
+
+    // Prompt User to select employee to update
+    inquirer.prompt([
+      {
+        type: 'list',
+        name: 'employee',
+        message: "Which employee's role do you want to update?",
+        choices: empChoice
+      }
+    ])
+    .then(empAnswer => {
+      // Get name and split into first and last names
+      const {employee} = empAnswer;
+      const [first_name, last_name] = employee.split(' ');
+      // Get target employee data to change from table
+      const targetEmp = empTable.filter(empInfo => empInfo.first_name === first_name && empInfo.last_name === last_name);
+      const targetEmpId = targetEmp[0].id;
+
+      // Get all roles from database
+      db.query('SELECT id, title FROM role', (err,roleTable) => {
+        if(err) throw err;
+
+        // Make role choice list
+        const roleChoice = [];
+        roleTable.forEach(roleInfo => roleChoice.push(roleInfo.title));
+
+        // Prompt user to role to choose
+        inquirer.prompt([
+          {
+            type: 'list',
+            name: 'role',
+            message: `Which role do you want to assign to ${employee}?`,
+            choices: roleChoice
+          }
+        ])
+        .then(roleAnswer => {
+          const {role} = roleAnswer;
+          // find corresponding role info and get id
+          const targetRole = roleTable.filter(roleInfo => roleInfo.title === role);
+          const targetRoleId = targetRole[0].id;
+
+          // Update database with employee's new role
+          const updateSQL = `Update employee
+            SET role_id = ?
+            WHERE id = ?`;
+          const params = [targetRoleId, targetEmpId];
+          db.query(updateSQL, params, (err,res) => {
+            if(err) throw err;
+            console.log(`Updated ${employee}'s role in the database.`);
+            promptUser();
+          })
+        })
+      })
+
+    })
+  })
+}
+
 // to start the application
 promptUser();
