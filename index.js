@@ -67,7 +67,7 @@ const viewAllDepartments = () => {
 const viewAllRoles = () => {
   const sql = `SELECT role.id, role.title as role, role.salary, department.name AS department
     FROM role
-    INNER JOIN department ON role.department_id = department.id`;
+    LEFT JOIN department ON role.department_id = department.id`;
   db.query(sql, (err,res) => {
     if(err) throw err;
     console.table('\n All roles:',res);
@@ -76,7 +76,16 @@ const viewAllRoles = () => {
 
 // display all employees
 const viewAllEmployees = () => {
-
+  const sql = `SELECT employee.id, employee.first_name, employee.last_name, role.title AS role, department.name AS department, role.salary,
+    IF(ISNULL(employee.manager_id)=1, 'null', CONCAT(manager.first_name, ' ', manager.last_name)) AS manager
+    FROM employee
+    LEFT JOIN role on employee.role_id = role.id
+    LEFT JOIN department on role.department_id = department.id
+    LEFT JOIN employee manager on manager.id = employee.manager_id`;
+  db.query(sql, (err,res) => {
+    if(err) throw err;
+    console.table('\n All employees:',res);
+  })
 }
 
 // to start the application
