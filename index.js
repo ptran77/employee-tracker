@@ -172,6 +172,7 @@ const addRole = () => {
       const deptChoice = [];
       deptTable.forEach(deptInfo => deptChoice.push(deptInfo.name));
 
+      // Continue the prompt to ask for department choice
       inquirer.prompt([
         {
           type: 'list',
@@ -180,10 +181,10 @@ const addRole = () => {
           choices: deptChoice
         }
       ])
-      .then(deptChoice => {
+      .then(deptAnswer => {
 
         // Getting the department information that corresponds with user input
-        const {dept} = deptChoice;
+        const {dept} = deptAnswer;
         const targetDept = deptTable.filter(deptInfo => deptInfo.name === dept);
 
         // Checking to see if there is already a role with the same title, salary, and department id
@@ -208,6 +209,103 @@ const addRole = () => {
               promptUser();
             })
           }
+        })
+      })
+    })
+  })
+}
+
+// Add an employee
+const addEmployee = () => {
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'first_name',
+      message: "What is the employee's first name?",
+      validate: fnInput => {
+        if(fnInput) return true;
+        else {
+          console.log("You need to enter the employee's first name.")
+          return false;
+        }
+      }
+    },
+    {
+      type: 'input',
+      name: 'last_name',
+      message: "What is the employee's last name?",
+      validate: lnInput => {
+        if(lnInput) return true;
+        else {
+          console.log("You need to enter the employee's last name.")
+          return false;
+        }
+      }
+    }
+  ])
+  .then(employeeName => {
+    const {first_name, last_name} = employeeName;
+    
+
+    // Getting all roles into choices
+    db.query('SELECT * FROM role', (err,roleTable) => {
+      if(err) throw err;
+      const roleChoice = [];
+      roleTable.forEach(roleInfo => roleChoice.push(roleInfo.title));
+
+      // Continue prompt to select role
+      inquirer.prompt([
+        {
+          type: 'list',
+          name: 'role',
+          message: "What is the employee's role?",
+          choices: roleChoice
+        }
+      ])
+      .then(roleAnswer => {
+        // Getting all role info about the corresponding input
+        const {role} = roleAnswer;
+        const targetRole = roleTable.filter(roleInfo => roleInfo.title === role);
+
+        // Get all current employees to ask user to select manager
+        db.query('SELECT * FROM employee', (err,empTable) => {
+          if(err) throw err;
+          
+          // Make managerChoice array
+          const managerChoice = [];
+          empTable.forEach(empInfo => managerChoice.push(empInfo.first_name + ' ' + empInfo.last_name));
+          managerChoice.push("None")
+
+          // Prompt the user to ask for manager
+          inquirer.prompt([
+            {
+              type: 'list',
+              name: 'manager',
+              message: "Who is the employee's manager?",
+              choices: managerChoice
+            }
+          ])
+          .then(managerAnswer => {
+            // Get Manager info from employee table
+            const {manager} = managerAnswer;
+            let manager_id = null;
+            if(manager !== 'None') {
+              const targetManager = empTable.filter(empInfo => empInfo.first_name === manager.split(' ')[0] && empInfo.last_name === manager.split(' ')[1]);
+              manager_id = targetManager[0].id;
+            }
+
+
+            // Add the employee to the database
+            const addSql = `INSERT INTO employee(first_name, last_name, role_id, manager_id)
+              VALUES (?,?,?,?)`;
+            const params = [first_name, last_name, targetRole[0].id, manager_id];
+            db.query(addSql, params, (err,res) => {
+              if(err) throw err;
+              
+              console.log(`Added ${first_name} ${last_name} to the database.`);
+              promptUser();
+            })
+          })
         })
       })
     })
