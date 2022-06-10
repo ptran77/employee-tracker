@@ -10,7 +10,7 @@ const promptUser = () => {
     {
       type: 'list',
       name: 'choice',
-      message: 'What would you like to do',
+      message: 'What would you like to do?',
       choices: [
         'View all departments',
         'View all roles',
@@ -46,11 +46,8 @@ const promptUser = () => {
         updateEmployeeRole();
         break;
       default:
-        db.end();
-        return;
+        db.end();      
     };
-
-    promptUser();
   })
 }
 
@@ -60,6 +57,7 @@ const viewAllDepartments = () => {
   db.query(sql, (err,res) => {
     if(err) throw err;
     console.table('\nAll departments:', res);
+    promptUser();
   })
 }
 
@@ -71,6 +69,7 @@ const viewAllRoles = () => {
   db.query(sql, (err,res) => {
     if(err) throw err;
     console.table('\n All roles:',res);
+    promptUser();
   })
 }
 
@@ -85,6 +84,44 @@ const viewAllEmployees = () => {
   db.query(sql, (err,res) => {
     if(err) throw err;
     console.table('\n All employees:',res);
+    promptUser();
+  })
+}
+
+const addDeparment = () => {
+  return inquirer.prompt([
+    {
+      type: 'input',
+      name: 'department',
+      message: 'What is the name of the department? ',
+      validate: departmentInput => {
+        if(departmentInput) return true;
+        else {
+          console.log("You need to enter the department's name.");
+          return false;
+        }
+      }
+    }
+  ])
+  .then(answer => {
+    const {department} = answer;
+    const sql = 'SELECT * FROM department where name = ?';
+    db.query(sql, department, (err,res) => {
+      if(err) throw err;
+      if(res.length) {
+        console.log(`There is already a department call ${department}`);
+        promptUser();
+      }
+      else {
+        const add = `INSERT INTO department(name)
+          VALUES (?)`;
+        db.query(add, department, (err,res) => {
+          if(err) throw err;
+          console.log(`Added ${department} to the database`);
+          promptUser();
+        })
+      }
+    })
   })
 }
 
