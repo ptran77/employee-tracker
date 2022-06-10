@@ -37,7 +37,10 @@ const promptUser = () => {
         viewAllEmployees();
         break;
       case 'Add a department':
-        addDeparment();
+        addDepartment();
+        break;
+      case 'Add a role':
+        addRole();
         break;
       case 'Add an employee':
         addEmployee();
@@ -88,8 +91,9 @@ const viewAllEmployees = () => {
   })
 }
 
-const addDeparment = () => {
-  return inquirer.prompt([
+// Add a department
+const addDepartment = () => {
+  inquirer.prompt([
     {
       type: 'input',
       name: 'department',
@@ -106,12 +110,17 @@ const addDeparment = () => {
   .then(answer => {
     const {department} = answer;
     const sql = 'SELECT * FROM department where name = ?';
+    
+    // Checking to see if department exists in database already
     db.query(sql, department, (err,res) => {
       if(err) throw err;
+
+      // Department already exists
       if(res.length) {
         console.log(`There is already a department call ${department}`);
         promptUser();
       }
+      // Department doesn't exist
       else {
         const add = `INSERT INTO department(name)
           VALUES (?)`;
@@ -121,6 +130,86 @@ const addDeparment = () => {
           promptUser();
         })
       }
+    })
+  })
+}
+
+// Add a role
+const addRole = () => {
+  inquirer.prompt([
+    {
+      type: 'input',
+      name: 'role',
+      message: 'What is the name of the role? ',
+      validate: roleInput => {
+        if(roleInput) return true;
+        else {
+          console.log("You need to enter the role's name.");
+          return false;
+        }
+      }
+    },
+    {
+      type: 'input',
+      name: 'salary',
+      message: 'What is the salary of the role? ',
+      validate: salaryInput => {
+        if(salaryInput && !isNaN(salaryInput)) return true;
+        else {
+          console.log("You need input a salary");
+          return false;
+        }
+      }
+    }
+  ])
+  .then(roleData => {
+    const {role, salary} = roleData;
+    
+    // Getting department names from database into a list for the user to choose
+    const deptSql  = 'SELECT * FROM department';
+    db.query(deptSql, (err,deptTable) => {
+      if(err) throw err;
+      const deptChoice = [];
+      deptTable.forEach(deptInfo => deptChoice.push(deptInfo.name));
+
+      inquirer.prompt([
+        {
+          type: 'list',
+          name: 'dept',
+          message: 'Which department does the role belong to?',
+          choices: deptChoice
+        }
+      ])
+      .then(deptChoice => {
+
+        // Getting the department information that corresponds with user input
+        const {dept} = deptChoice;
+        const targetDept = deptTable.filter(deptInfo => deptInfo.name === dept);
+
+        // Checking to see if there is already a role with the same title, salary, and department id
+        const roleSql = `SELECT * FROM role WHERE title = ? AND salary = ? AND department_id = ?`;
+        const params = [role, salary, targetDept[0].id];
+        db.query(roleSql, params, (err,res) => {
+          if(err) throw err;
+
+          // There is already a role with same title, salary, and department id
+          if(res.length) {
+            console.log(`There is already a role called ${role} with a salary of ${salary} in the ${dept} department.`);
+            promptUser();
+          }
+          // The role wasn't found, so add to the database
+          else {
+            const addSql = `INSERT INTO role(title, salary, department_id)
+              VALUES(?,?,?)`;
+            db.query(addSql, params, (err, res) => {
+              if(err) throw err;
+
+              console.log(`Added ${role} to the database.`);
+              promptUser();
+            })
+          }
+        })
+      })
     })
   })
 }
