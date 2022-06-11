@@ -27,6 +27,10 @@ A command line application that manages a company's employee database, using Nod
 
 ## Demo
 
+<img src='./employee-tracker-demo.gif' width=500 />
+
+[Video Link](https://drive.google.com/file/d/1kPnOMW0Rrzknpa0n7IZxr4aYs1gJ-lhw/view?usp=sharing)
+
 ## Questions
 
 Github: [ptran77](https://github.com/ptran77)
